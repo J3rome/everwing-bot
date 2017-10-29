@@ -2,8 +2,9 @@ import numpy as np
 import os
 import argparse
 import cv2
-import subprocess
 from time import sleep
+
+import adbWrapper as adb
 
 ### Image Processing ###
 def findCenterOfMask(mask):
@@ -110,27 +111,13 @@ def getAdProgress(imgPath):
     buttonMask = cv2.inRange(imgCropped, buttonColorBoundaries['lower'], buttonColorBoundaries['upper'])
     buttonMask = cv2.dilate(buttonMask, np.ones((50, 50), np.uint8))
 
-### ADB COMMANDS ###
-def takeScreenCapture(imgPath):
-    cmd = "adb shell screencap -p"
-
-    file = open(imgPath,"w")
-
-    subprocess.run(cmd.split(" "), stdout=file)
-    file.close()
-
-def sendTap(xCoord, yCoord):
-    cmd = "adb shell input tap " + str(xCoord) + " "+str(yCoord)
-
-    subprocess.run(cmd.split(" "))
-
 ### Actions ###
 def startAd():
     buttonScreenImgPath = os.path.join(os.getcwd(), 'capture/buttonScreen.png')
 
-    takeScreenCapture(buttonScreenImgPath)
+    adb.takeScreenCapture(buttonScreenImgPath)
     tapPosition = getTapPositionFromButtonScreen(buttonScreenImgPath)
-    sendTap(tapPosition[0], tapPosition[1])
+    adb.sendTap(tapPosition[0], tapPosition[1])
     print(">> Ad started")
 
 def waitForAdToFinish():
@@ -141,7 +128,7 @@ def waitForAdToFinish():
     inProgress = True
 
     while inProgress:
-        takeScreenCapture(progressScreenImgPath)
+        adb.takeScreenCapture(progressScreenImgPath)
         if isEndScreen(progressScreenImgPath):
             inProgress = False
         else:
@@ -157,7 +144,7 @@ def closeAd(endScreenImgPath):
     img = cv2.imread(endScreenImgPath)
     imgHeight, imgWidth, _ = img.shape
 
-    sendTap(imgWidth * 0.963, imgHeight * 0.053)
+    adb.sendTap(imgWidth * 0.963, imgHeight * 0.053)
 
     print(">> Ad closed")
 
