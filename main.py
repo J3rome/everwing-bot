@@ -1,6 +1,9 @@
 import numpy as np
+import os
 import argparse
 import cv2
+import subprocess
+from time import sleep
 
 
 def findCenterOfMask(mask):
@@ -101,8 +104,6 @@ def getExitTapPosition(imgPath):
     cv2.imshow("Progress", imgCropped)
     cv2.waitKey(0)
 
-
-
 def getAdProgress(imgPath):
     img = cv2.imread(imgPath)
     imgHeight, imgWidth, imgChannels = img.shape
@@ -129,6 +130,53 @@ def getAdProgress(imgPath):
     buttonMask = cv2.inRange(imgCropped, buttonColorBoundaries['lower'], buttonColorBoundaries['upper'])
     buttonMask = cv2.dilate(buttonMask, np.ones((50, 50), np.uint8))
 
-getExitTapPosition('images/endScreen.png')
+### ADB COMMANDS ###
+def takeScreenCapture(imgPath):
+    cmd = "adb shell screencap -p"
+
+    file = open(imgPath,"w")
+
+    subprocess.run(cmd.split(" "), stdout=file)
+    file.close()
+
+def sendTap(xCoord, yCoord):
+    cmd = "adb shell input tap " + str(xCoord) + " "+str(yCoord)
+
+    subprocess.run(cmd.split(" "))
+
+def startAd():
+    buttonScreenImgPath = os.path.join(os.getcwd(), 'capture/buttonScreen.png')
+
+    takeScreenCapture(buttonScreenImgPath)
+    tapPosition = getTapPositionFromButtonScreen(buttonScreenImgPath)
+    sendTap(tapPosition[0], tapPosition[1])
+
+def doLvlUp():
+    """
+    Must be on lvl up screen before launching
+    :return:
+    """
+    sleepTime = 5   # 5 seconds
+
+    progressScreenImgPath = os.path.join(os.getcwd(), 'capture/progressScreen.png')
+    endScreenImgPath = os.path.join(os.getcwd(), 'capture/endScreen.png')
+
+    startAd()
+
+    inProgress = True
+
+    while(inProgress):
+        takeScreenCapture(progressScreenImgPath)
+        if(isEndScreen(progressScreenImgPath)):
+            inProgress = False
+        else:
+            print("Waiting for ad to finish...")
+            sleep(sleepTime)
+
+    print("Ad is Finished ! :D")
+
+
+doLvlUp()
+print("done")
 
 #getAdProgress('images/progressBar_black.png')
