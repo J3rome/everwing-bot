@@ -5,9 +5,9 @@ import cv2
 import subprocess
 from time import sleep
 
-
+### Image Processing ###
 def findCenterOfMask(mask):
-    # FIXME: .copy() ?
+    # FIXME: mask.copy() ?
     countours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
 
     # We only process the first contour
@@ -53,26 +53,6 @@ def getTapPositionFromButtonScreen(imgPath):
     center = findCenterOfMask(buttonMask)
 
     return center[0], buttonZoneStartY + center[1]
-
-
-def oldStuff():
-    colorsBoundaries = [
-        # B    G   R
-        ([0, 105, 254], [0, 107, 255]),     # orange
-        ([254, 37, 0], [255, 39, 0]),       # blue
-        ([0, 0, 254], [0, 0, 255]),   # red
-        ([0, 0, 0], [0, 0, 0])          # Black
-    ]
-
-    for (lower, upper) in colorsBoundaries:
-        lower = np.array(lower, dtype = "uint8")
-        upper = np.array(upper, dtype = "uint8")
-
-        mask = cv2.inRange(image, lower, upper)
-        output = cv2.bitwise_and(image, image, mask=mask)
-
-        cv2.imshow("Images", np.hstack([image, output]))
-        cv2.waitKey(0)
         
 def isEndScreen(imgPath):
     img = cv2.imread(imgPath)
@@ -96,8 +76,8 @@ def getExitTapPosition(imgPath):
     cropZoneStartY = int(imgHeight * 0.01)
     cropZoneStopY = int(imgHeight * 0.05)
 
-    cropZoneStartX = int(imgWidth * 0.90)
-    cropZoneStopX = int(imgWidth * 0.99)
+    cropZoneStartX = int(imgWidth * 0.912)
+    cropZoneStopX = int(imgWidth * 0.985)
 
     imgCropped = img[cropZoneStartY:cropZoneStopY, cropZoneStartX:cropZoneStopX]
 
@@ -144,39 +124,65 @@ def sendTap(xCoord, yCoord):
 
     subprocess.run(cmd.split(" "))
 
+### Actions ###
 def startAd():
     buttonScreenImgPath = os.path.join(os.getcwd(), 'capture/buttonScreen.png')
 
     takeScreenCapture(buttonScreenImgPath)
     tapPosition = getTapPositionFromButtonScreen(buttonScreenImgPath)
     sendTap(tapPosition[0], tapPosition[1])
+    print(">> Ad started")
 
-def doLvlUp():
+def waitForAdToFinish():
+    sleepTime = 5  # 5 seconds
+
+    progressScreenImgPath = os.path.join(os.getcwd(), 'capture/progressScreen.png')
+
+    inProgress = True
+
+    while inProgress:
+        takeScreenCapture(progressScreenImgPath)
+        if isEndScreen(progressScreenImgPath):
+            inProgress = False
+        else:
+            print(">>> Waiting for ad to finish...")
+            sleep(sleepTime)
+
+    print(">> Ad is Finished !")
+
+    return progressScreenImgPath
+
+# FIXME : This should be done via image recognition instead of hard coded..
+def closeAd(endScreenImgPath):
+    img = cv2.imread(endScreenImgPath)
+    imgHeight, imgWidth, _ = img.shape
+
+    sendTap(imgWidth * 0.963, imgHeight * 0.053)
+
+    print(">> Ad closed")
+
+def doLvlUp(nb=1):
     """
     Must be on lvl up screen before launching
     :return:
     """
-    sleepTime = 5   # 5 seconds
-
-    progressScreenImgPath = os.path.join(os.getcwd(), 'capture/progressScreen.png')
-    endScreenImgPath = os.path.join(os.getcwd(), 'capture/endScreen.png')
-
-    startAd()
-
-    inProgress = True
-
-    while(inProgress):
-        takeScreenCapture(progressScreenImgPath)
-        if(isEndScreen(progressScreenImgPath)):
-            inProgress = False
-        else:
-            print("Waiting for ad to finish...")
-            sleep(sleepTime)
-
-    print("Ad is Finished ! :D")
+    for i in range(0, nb):
+        print("> Lvl " + str(i))
+        startAd()
+        endScreenImgPath = waitForAdToFinish()
+        closeAd(endScreenImgPath)
+        sleep(0.5)
 
 
-doLvlUp()
-print("done")
+def main():
+    nbOfLvl = 5
+    print("Be sure to be on lvlup screen before running this script !")
+    input("Press Enter to continue...")
 
-#getAdProgress('images/progressBar_black.png')
+    print("Lvlupping for "+ str(nbOfLvl) + " Lvl")
+    doLvlUp(nbOfLvl)
+    print("done")
+
+
+if __name__ == "__main__":
+    main()
