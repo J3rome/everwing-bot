@@ -61,13 +61,20 @@ def doLvlUp(nb=1):
 
 
 def main():
-    nbOfLvl = 5
+
+    # Parsing arguments
+    parser = argparse.ArgumentParser(description="Simple everwing auto ad watcher")
+
+    parser.add_argument('-nb', action='store', dest='nbOfLvl', type=int, default=5)
+
+    options = parser.parse_args()
+    
     print("Be sure to be on lvlup screen before running this script !")
+    print("This screen will attempt to lvlup your character for "+str(options.nbOfLvl)+" lvl")
     input("Press Enter to continue...")
 
-    print("Lvlupping for "+ str(nbOfLvl) + " Lvl")
+    doLvlUp(options.nbOfLvl)
 
-    doLvlUp(nbOfLvl)
     print("done")
 
 
