@@ -1,4 +1,5 @@
 import subprocess
+import datetime
 import os
 
 
@@ -10,7 +11,12 @@ def takeScreenCapture(imgPath):
     file = open(imgPath,"w")
 
     subprocess.run(cmd.split(" "), stdout=file)
+
+    timestamp = datetime.datetime.now()
+
     file.close()
+
+    return timestamp
 
 
 def sendTap(xCoord, yCoord):

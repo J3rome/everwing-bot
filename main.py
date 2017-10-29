@@ -36,6 +36,54 @@ def waitForAdToFinish():
 
     return progressScreenImgPath
 
+def findAdLength():
+    # Ad must be started for this to work
+    progressScreenImgPath = os.path.join(os.getcwd(), 'capture/progressScreen.png')
+
+    firstTimeStamp = adb.takeScreenCapture(progressScreenImgPath)
+    firstProgress = imgProcessor.getAdProgress(progressScreenImgPath)*100
+
+    # TODO : Verify if work with less time
+    sleep(2)
+
+    secondTimeStamp = adb.takeScreenCapture(progressScreenImgPath)
+    secondProgress = imgProcessor.getAdProgress(progressScreenImgPath)*100
+
+    progressDif = secondProgress - firstProgress
+    timeDiff = secondTimeStamp - firstTimeStamp
+
+    timeDiffSec = timeDiff.seconds + timeDiff.microseconds/1e6
+
+    print("Time Diff : ")
+    print(timeDiff)
+
+    print("Time diff sec : ")
+    print(timeDiff.seconds + timeDiff.microseconds/1e6)
+
+    print("Progress diff : ")
+    print(progressDif)
+
+    print("Progress 1 : ")
+    print(firstProgress)
+
+    print("Progress 2 : ")
+    print(secondProgress)
+
+    progressPerSec = progressDif/timeDiffSec
+
+    progressToGo = 100 - secondProgress
+
+    timeToGo = progressToGo/progressPerSec
+
+    print(str(timeToGo) + " sec before ad end")
+
+    sleep(timeToGo)
+
+    print("Ad as ended !")
+
+
+
+
 
 # FIXME : This should be done via image recognition instead of hard coded..
 def closeAd(endScreenImgPath):
@@ -68,9 +116,10 @@ def main():
     parser.add_argument('-nb', action='store', dest='nbOfLvl', type=int, default=5)
 
     options = parser.parse_args()
-    
-    print("Be sure to be on lvlup screen before running this script !")
-    print("This screen will attempt to lvlup your character for "+str(options.nbOfLvl)+" lvl")
+
+    print("Be sure to have you android phone connected in debugger mode before running this script !")
+    print("You also need to be on the character menu where you can watch a video to get a new level")
+    print("This script will attempt to lvlup your character by "+str(options.nbOfLvl)+" lvl")
     input("Press Enter to continue...")
 
     doLvlUp(options.nbOfLvl)

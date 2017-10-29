@@ -67,24 +67,6 @@ def isEndScreen(imgPath):
     # We know that the ad is not finished if the background is black
     return averageColorIntensity > 200
 
-
-## UNUSED
-def getExitTapPosition(imgPath):
-    img = cv2.imread(imgPath)
-    imgHeight, imgWidth, imgChannels = img.shape
-
-    cropZoneStartY = int(imgHeight * 0.01)
-    cropZoneStopY = int(imgHeight * 0.05)
-
-    cropZoneStartX = int(imgWidth * 0.912)
-    cropZoneStopX = int(imgWidth * 0.985)
-
-    imgCropped = img[cropZoneStartY:cropZoneStopY, cropZoneStartX:cropZoneStopX]
-
-    cv2.imshow("Progress", imgCropped)
-    cv2.waitKey(0)
-
-
 def getAdProgress(imgPath):
     img = cv2.imread(imgPath)
     imgHeight, imgWidth, imgChannels = img.shape
@@ -101,10 +83,30 @@ def getAdProgress(imgPath):
     }
 
     progressBarMask = cv2.inRange(imgCropped, progressBarColorBoundaries['lower'], progressBarColorBoundaries['upper'])
-    cv2.imshow("Progress", progressBarMask)
-    cv2.waitKey(0)
-    exit()
 
-    # Create the mask
-    buttonMask = cv2.inRange(imgCropped, buttonColorBoundaries['lower'], buttonColorBoundaries['upper'])
-    buttonMask = cv2.dilate(buttonMask, np.ones((50, 50), np.uint8))
+    image, contours, hier = cv2.findContours(progressBarMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # TODO : find the button position on whole screenshot instead of cropping. Have to diferenciate between multiple pink
+    contour = contours[0]
+
+    _, _, width, _ = cv2.boundingRect(contour)
+
+    progressPercentage = float(width)/imgWidth
+
+    return progressPercentage
+
+## UNUSED
+def getExitTapPosition(imgPath):
+    img = cv2.imread(imgPath)
+    imgHeight, imgWidth, imgChannels = img.shape
+
+    cropZoneStartY = int(imgHeight * 0.01)
+    cropZoneStopY = int(imgHeight * 0.05)
+
+    cropZoneStartX = int(imgWidth * 0.912)
+    cropZoneStopX = int(imgWidth * 0.985)
+
+    imgCropped = img[cropZoneStartY:cropZoneStopY, cropZoneStartX:cropZoneStopX]
+
+    cv2.imshow("Progress", imgCropped)
+    cv2.waitKey(0)
